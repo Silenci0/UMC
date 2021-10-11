@@ -945,32 +945,6 @@ CheckMaxRounds()
     }
 }
 
-GetTopTwoTeamScores(&first, &second=0)
-{
-    new teamCount = GetTeamCount();
-    first = 0;
-    second = 0;
-    new score;
-    for (new i = 2; i < teamCount; i++)
-    {
-        score = GetTeamScore(i);
-
-        if (score > first)
-        {
-            second = first;
-            first = score;
-        }
-        else if (score > second)
-        {
-            second = score;
-        }
-        else 
-        {
-            LogUMCMessage("DEBUG: Score is not greater than first or second team in GetTopTwoTeamScores... potential problem?");
-        }
-    }
-}
-
 //Makes the timer which will activate the end-of-map vote at a certain time.
 Handle:MakeTimer()
 {
