@@ -1,22 +1,5 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *                                  Ultimate Mapchooser - Core                                   *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*************************************************************************
-*************************************************************************
-This plugin is free software: you can redistribute 
-it and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation, either version 3 of the License, or
-later version. 
+// SPDX-License-Identifier: GPL-3.0-only
 
-This plugin is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this plugin.  If not, see <http://www.gnu.org/licenses/>.
-*************************************************************************
-*************************************************************************/ 
 #pragma semicolon 1
 
 //Dependencies
@@ -33,11 +16,11 @@ along with this plugin.  If not, see <http://www.gnu.org/licenses/>.
 //Plugin Information
 public Plugin:myinfo =
 {
-    name        = "[UMC] Ultimate Mapchooser Core",
-    author      = "Previous:Steell,Powerlord - Current: Mr.Silence",
+    name        = "[UMC] Uncletopia Mapchooser Core",
+    author      = "Steell, Powerlord, Mr.Silence, VIORA",
     description = "Core component for [UMC]",
     version     = PL_VERSION,
-    url         = "http://forums.alliedmods.net/showthread.php?t=134190"
+    url         = "https://github.com/crescentrose/UMC"
 };
 
 //************************************************************************************************//
@@ -119,9 +102,6 @@ new bool:change_map_round; //Change map when the round ends?
 new Handle:cvar_maxrounds = INVALID_HANDLE;
 new Handle:cvar_fraglimit = INVALID_HANDLE;
 new Handle:cvar_winlimit  = INVALID_HANDLE;
-new Handle:cvar_nextlevel = INVALID_HANDLE;  //GE:S
-new Handle:cvar_zpsmaxrnds = INVALID_HANDLE; // ZPS Survival
-new Handle:cvar_zpomaxrnds = INVALID_HANDLE; // ZPS Objective
 
 //************************************************************************************************//
 //                                        SOURCEMOD EVENTS                                        //
@@ -275,35 +255,20 @@ public OnPluginStart()
 
     //Hook round end events
     HookEvent("round_end",            Event_RoundEnd); //Generic
-    HookEventEx("game_round_end",     Event_RoundEnd); //Hidden: Source, Neotokyo
     HookEventEx("teamplay_win_panel", Event_RoundEnd); //TF2
     HookEventEx("arena_win_panel",    Event_RoundEnd); //TF2
-    HookEventEx("round_win",          Event_RoundEnd); //Nuclear Dawn
-    HookEventEx("game_end",           Event_RoundEnd); //EmpiresMod
-    HookEventEx("game_round_restart", Event_RoundEnd); //ZPS
 
     //Initialize our vote arrays
     nominations_arr = CreateArray();
 
     //Make listeners for player chat. Needed to recognize chat commands ("rtv", etc.)
     AddCommandListener(OnPlayerChat, "say");
-    AddCommandListener(OnPlayerChat, "say2"); //Insurgency Only
     AddCommandListener(OnPlayerChat, "say_team");
 
     //Fetch Cvars
     cvar_maxrounds = FindConVar("mp_maxrounds");
     cvar_fraglimit = FindConVar("mp_fraglimit");
     cvar_winlimit  = FindConVar("mp_winlimit");
-    cvar_zpsmaxrnds = FindConVar("zps_survival_rounds"); // ZPS only!
-    cvar_zpomaxrnds = FindConVar("zps_objective_rounds"); // ZPS only!
-
-    //GE:S Fix
-    new String:game[20];
-    GetGameFolderName(game, sizeof(game));
-    if (StrEqual(game, "gesource", false))
-    {    
-        cvar_nextlevel = FindConVar("nextlevel");
-    }
 
     //Load the translations file
     LoadTranslations("ultimate-mapchooser.phrases");
@@ -3763,15 +3728,6 @@ ExtendMap(Handle:vM)
     {    
         SetConVarInt(cvar_fraglimit, GetConVarInt(cvar_fraglimit) + extend_fragstep);
     }
-    // ZPS specific
-    if (cvar_zpsmaxrnds != INVALID_HANDLE && GetConVarInt(cvar_zpsmaxrnds) > 0)
-    {
-        SetConVarInt(cvar_zpsmaxrnds, GetConVarInt(cvar_zpsmaxrnds) + extend_roundstep);
-    }
-    if (cvar_zpomaxrnds != INVALID_HANDLE && GetConVarInt(cvar_zpomaxrnds) > 0)
-    {
-        SetConVarInt(cvar_zpomaxrnds, GetConVarInt(cvar_zpomaxrnds) + extend_roundstep);
-    }
     
     //Extend the time limit.
     ExtendMapTimeLimit(RoundToNearest(extend_timestep * 60));
@@ -3809,12 +3765,6 @@ DoMapChange(UMC_ChangeMapTime:when, Handle:kv, const String:map[], const String:
     LogUMCMessage("Setting nextmap to: %s", map);
     SetNextMap(map);
     
-    //GE:S Fix
-    if (cvar_nextlevel != INVALID_HANDLE)
-    {
-        SetConVarString(cvar_nextlevel, map);
-    }
-    
     //Call UMC forward for next map being set
     new Handle:new_kv = INVALID_HANDLE;
     
@@ -3847,22 +3797,15 @@ DoMapChange(UMC_ChangeMapTime:when, Handle:kv, const String:map[], const String:
         {
             decl String:game[20];
             GetGameFolderName(game, sizeof(game));
-            if (!StrEqual(game, "gesource", false) && !StrEqual(game, "zps", false))
-            {
-                //Routine by Tsunami to end the map
-                new iGameEnd = FindEntityByClassname(-1, "game_end");
-                if (iGameEnd == -1 && (iGameEnd = CreateEntityByName("game_end")) == -1)
-                {
-                    ForceChangeInFive(map, reason);
-                } 
-                else 
-                {     
-                    AcceptEntityInput(iGameEnd, "EndGame");
-                }
-            }
-            else
+            //Routine by Tsunami to end the map
+            new iGameEnd = FindEntityByClassname(-1, "game_end");
+            if (iGameEnd == -1 && (iGameEnd = CreateEntityByName("game_end")) == -1)
             {
                 ForceChangeInFive(map, reason);
+            } 
+            else 
+            {     
+                AcceptEntityInput(iGameEnd, "EndGame");
             }
         }
         case ChangeMapTime_RoundEnd: //We change the map at the end of the round.

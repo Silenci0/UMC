@@ -1,22 +1,5 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *                             Ultimate Mapchooser - End of Map Vote                             *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*************************************************************************
-*************************************************************************
-This plugin is free software: you can redistribute 
-it and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation, either version 3 of the License, or
-later version. 
+// SPDX-License-Identifier: GPL-3.0-only
 
-This plugin is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this plugin.  If not, see <http://www.gnu.org/licenses/>.
-*************************************************************************
-*************************************************************************/   
 #pragma semicolon 1
 
 #include <sourcemod>
@@ -36,13 +19,6 @@ public Plugin:myinfo =
     version     = PL_VERSION,
     url         = "http://forums.alliedmods.net/showthread.php?t=134190"
 };
-
-//Changelog:
-/*
-3.3.2 (3/4/2012)
-Updated UMC Logging functionality
-Added ability to view the current mapcycle of all modules
-*/
 
 ////----CONVARS-----/////
 new Handle:cvar_filename                = INVALID_HANDLE;
@@ -89,11 +65,6 @@ new Handle:vote_timer = INVALID_HANDLE; //Timer which handles end-of-map vote ba
 new Handle:cvar_maxrounds = INVALID_HANDLE; //Round limit cvar
 new Handle:cvar_fraglimit = INVALID_HANDLE; //Frag limit cvar
 new Handle:cvar_winlimit  = INVALID_HANDLE; //Win limit cvar
-new Handle:cvar_zpsmaxrnds = INVALID_HANDLE; // ZPS Survival
-new Handle:cvar_zpomaxrnds = INVALID_HANDLE; // ZPS Objective
-
-//CS:GO mp_match_can_clinch cvar
-new Handle:cvar_clinch = INVALID_HANDLE;
 
 //Flags
 new bool:timer_alive;      //Is the time-based vote timer ticking?
@@ -115,7 +86,7 @@ new team_wincounts[MAXTEAMS];
 //Counts the number of available extensions.
 new extend_counter;
 
-// Name of current map used to determine which ZPS map/mode to look for!
+// Name of current map
 new String:current_map_name[MAP_LENGTH];
 
 //Sounds to be played at the start and end of votes.
@@ -349,28 +320,13 @@ public OnPluginStart()
     cvar_maxrounds = FindConVar("mp_maxrounds");
     cvar_fraglimit = FindConVar("mp_fraglimit");
     cvar_winlimit  = FindConVar("mp_winlimit");
-    cvar_zpsmaxrnds = FindConVar("zps_survival_rounds"); // ZPS only!
-    cvar_zpomaxrnds = FindConVar("zps_objective_rounds"); // ZPS only!
-    
-    //See if there is a clinch cvar
-    cvar_clinch = FindConVar("mp_match_can_clinch");
     
     if (cvar_maxrounds != INVALID_HANDLE || cvar_winlimit != INVALID_HANDLE)
     {
         HookEvent("round_end",                Event_RoundEnd); //Generic
-        HookEventEx("game_round_end",         Event_RoundEnd); //Hidden: Source, Neotokyo
         HookEventEx("teamplay_win_panel",     Event_RoundEndTF2); //TF2
         HookEventEx("arena_win_panel",        Event_RoundEndTF2); //TF2
         HookEventEx("teamplay_restart_round", Event_RestartRound); //TF2  
-        HookEventEx("cs_match_end_restart",   Event_RestartRound); //CS:GO
-        HookEventEx("round_win",              Event_RoundEnd); //Nuclear Dawn
-    }
-    
-    // ZPS Specific
-    if (cvar_zpomaxrnds != INVALID_HANDLE || cvar_zpsmaxrnds != INVALID_HANDLE)
-    {
-        HookEventEx("round_win",              Event_RoundEndZPS);
-        HookEventEx("game_round_restart",     Event_RestartRoundZPS); 
     }
     
     //Hook score.
@@ -587,24 +543,6 @@ public Event_RoundEndTF2(Handle:evnt, const String:name[], bool:dontBroadcast)
     }
 }
 
-//Called when a round ends in ZPS. 
-public Event_RoundEndZPS(Handle:evnt, const String:name[], bool:dontBroadcast)
-{
-    if (vote_roundend)
-    {
-        vote_roundend = false;
-        StartMapVoteRoundEnd();
-    }
-    
-    //Update the round "timer"
-    round_counter++;
-    
-    if (vote_enabled) 
-    {
-        CheckMaxRounds();
-    }
-}
-
 //Called when the map is restarted.
 public Event_RestartRound(Handle:evnt, const String:name[], bool:dontBroadcast)
 {
@@ -632,39 +570,10 @@ public Event_RestartRound(Handle:evnt, const String:name[], bool:dontBroadcast)
     }
 }
 
-//Called when the map is restarted, ZPS specific
-public Event_RestartRoundZPS(Handle:evnt, const String:name[], bool:dontBroadcast)
-{
-    round_counter = 0;
-    
-    // Update our vote warnings.
-    // ZPO (Objective) maps
-    if (cvar_zpomaxrnds != INVALID_HANDLE && strncmp(current_map_name, "zpo_", 4) == 0)
-    {
-        //Update our vote warnings.
-        Call_StartForward(round_update_forward);
-        Call_PushCell(GetConVarInt(cvar_zpomaxrnds) - GetConVarInt(cvar_start_rounds));
-        Call_Finish();
-    }
-    // ZPS (Survival) maps
-    else if (cvar_zpsmaxrnds != INVALID_HANDLE && strncmp(current_map_name, "zps_", 4) == 0)
-    {
-        //Update our vote warnings.
-        Call_StartForward(round_update_forward);
-        Call_PushCell(GetConVarInt(cvar_zpsmaxrnds) - GetConVarInt(cvar_start_rounds));
-        Call_Finish();
-    }
-    else
-    {
-        // Do nothing...
-        LogUMCMessage("DEBUG: Neither gamemode recognized for ZPS... Possible bug or new gamemode?");
-    }
-}
-
 //Called at the end of a map.
 public OnMapEnd()
 {
-    //Vote timer is not running
+    // Vote timer is not running
     timer_alive = false;
     vote_timer = INVALID_HANDLE;
 }
@@ -742,39 +651,6 @@ UpdateOtherTimers()
         }
          
         //Update our vote warnings.
-        //UpdateVoteWarnings(.round=warnings_round_enabled, .frag=warnings_frag_enabled);
-        Call_StartForward(round_update_forward);
-        Call_PushCell(start);
-        Call_Finish();
-    }
-    
-    // ZPS Objective Maps
-    if (cvar_zpomaxrnds != INVALID_HANDLE && strncmp(current_map_name, "zpo_", 4) == 0)
-    {
-        start = GetConVarInt(cvar_zpomaxrnds) - GetConVarInt(cvar_start_rounds) - round_counter;
-        if (start > 0)
-        {    
-            LogUMCMessage("End of map vote will appear after %i more rounds.", start);
-        }
-        
-        //Update our vote warnings.
-        //UpdateVoteWarnings(.round=warnings_round_enabled, .frag=warnings_frag_enabled);
-        Call_StartForward(round_update_forward);
-        Call_PushCell(start);
-        Call_Finish();
-    }
-    
-    // ZPS Survival Maps
-    if (cvar_zpsmaxrnds != INVALID_HANDLE && strncmp(current_map_name, "zps_", 4) == 0)
-    {
-        start = GetConVarInt(cvar_zpsmaxrnds) - GetConVarInt(cvar_start_rounds) - round_counter;
-        if (start > 0)
-        {
-            LogUMCMessage("End of map vote will appear after %i more rounds.", start);
-        }
-        
-        //Update our vote warnings.
-        //UpdateVoteWarnings(.round=warnings_round_enabled, .frag=warnings_frag_enabled);
         Call_StartForward(round_update_forward);
         Call_PushCell(start);
         Call_Finish();
@@ -810,7 +686,6 @@ UpdateOtherTimers()
         }
         
         //Update our vote warnings.
-        //UpdateVoteWarnings(.round=warnings_round_enabled, .frag=warnings_frag_enabled);
         Call_StartForward(frag_update_forward);
         Call_PushCell(start);
         Call_PushCell(topFragger);
@@ -1047,23 +922,10 @@ CheckWinLimit(winner_score, winning_team)
 //Starts a vote if the given round count is high enough
 CheckMaxRounds()
 {
-    if (cvar_maxrounds != INVALID_HANDLE || cvar_zpomaxrnds != INVALID_HANDLE || cvar_zpsmaxrnds != INVALID_HANDLE)
+    if (cvar_maxrounds != INVALID_HANDLE)
     {
         new maxrounds; 
-        
-        // Look for ZPS specific rounds first, otherwise assume its mp_maxrounds
-        if (cvar_zpomaxrnds != INVALID_HANDLE && strncmp(current_map_name, "zpo_", 4) == 0)
-        {
-            maxrounds = GetConVarInt(cvar_zpomaxrnds);
-        }
-        else if (cvar_zpsmaxrnds != INVALID_HANDLE && strncmp(current_map_name, "zps_", 4) == 0)
-        {
-            maxrounds = GetConVarInt(cvar_zpsmaxrnds);
-        }
-        else
-        {
-            maxrounds = GetConVarInt(cvar_maxrounds);
-        }
+        maxrounds = GetConVarInt(cvar_maxrounds);
         
         if (maxrounds > 0)
         {
@@ -1074,18 +936,6 @@ CheckMaxRounds()
                 LogUMCMessage("Round limit triggered end of map vote.");
                 DestroyTimers();
                 StartMapVoteRoundEnd();
-            }
-            else if (cvar_clinch != INVALID_HANDLE && GetConVarBool(cvar_clinch))
-            {
-                new winnerScore;
-                GetTopTwoTeamScores(winnerScore);
-
-                if (winnerScore > (maxrounds / 2 - startRounds))
-                {
-                    LogUMCMessage("Round limit triggered end of map vote due to potential clinch.");
-                    DestroyTimers();
-                    StartMapVoteRoundEnd();
-                }
             }
             
             Call_StartForward(round_tick_forward);

@@ -1,19 +1,5 @@
-/*************************************************************************
-*************************************************************************
-This plugin is free software: you can redistribute 
-it and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation, either version 3 of the License, or
-later version. 
+// SPDX-License-Identifier: GPL-3.0-only
 
-This plugin is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this plugin.  If not, see <http://www.gnu.org/licenses/>.
-*************************************************************************
-*************************************************************************/
 #if defined _umc_utils_included
     #endinput
 #endif
@@ -34,26 +20,21 @@ along with this plugin.  If not, see <http://www.gnu.org/licenses/>.
 //************************************************************************************************//
 
 #if UMC_DEBUG
-//Prints a debug message.
-stock DebugMessage(const String:message[], any:...)
-{
-    new size = strlen(message) + 255;
-    decl String:fMessage[size];
-    VFormat(fMessage, size, message, 2);
-    
-    LogUMCMessage("DEBUG: %s", fMessage);
-}
-#define DEBUG_MESSAGE(%0) DebugMessage(%0);
-
+    //Prints a debug message.
+    stock DebugMessage(const String:message[], any:...)
+    {
+        new size = strlen(message) + 255;
+        decl String:fMessage[size];
+        VFormat(fMessage, size, message, 2);
+        
+        LogUMCMessage("DEBUG: %s", fMessage);
+    }
+    #define DEBUG_MESSAGE(%0) DebugMessage(%0);
 #else
-
-#define DEBUG_MESSAGE(%0)
-
+    #define DEBUG_MESSAGE(%0)
 #endif
 
-
 #define MIN(%0, %1) ((%0) < (%1)) ? (%0) : (%1)
-
 
 stock LogUMCMessage(const String:message[], any:...)
 {
@@ -68,7 +49,6 @@ stock LogUMCMessage(const String:message[], any:...)
     
     LogToFile(fileName, fMessage);
 }
-
 
 stock StringToUpper(String:str[])
 {
@@ -472,12 +452,6 @@ stock CacheSound(const String:sound[])
             
             //Cache it.
             PrecacheSoundAny(sound, true);
-            
-            //Log an error if the sound failed to be cached.
-            if (!IsSoundPrecached(filePath))
-            {    
-                LogError("SOUND ERROR: Failed to precache sound file '%s'", sound);
-            }
         }
     }
 }

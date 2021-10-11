@@ -1,20 +1,5 @@
-/*************************************************************************
-*************************************************************************
-This plugin is free software: you can redistribute 
-it and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation, either version 3 of the License, or
-later version. 
+// SPDX-License-Identifier: GPL-3.0-only
 
-This plugin is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this plugin.  If not, see <http://www.gnu.org/licenses/>.
-*************************************************************************
-*************************************************************************/
-//Header file for Ultimate Mapchooser v3.0 by Steell.
 #if defined _umc_core_included
     #endinput
 #endif
@@ -22,7 +7,7 @@ along with this plugin.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma semicolon 1
 
-#define PL_VERSION "3.7.1"
+#define PL_VERSION "4.0.0"
 #define UMC_DEBUG 1
 #define AUTOUPDATE_ENABLE 0
 #define AUTOUPDATE_DEV 0
@@ -106,19 +91,6 @@ enum UMC_VoteResponse
     VoteResponse_Fail,
 };
 
-
-/**
- * Called when a nomination was removed from UMC.
- *
- * @param map  The name of the map
- * @param client    The client that the nomination belonged to.
- *
- * @noreturn
- */
-//Commented out to compile on SourceMod 1.7 or newer
-//forward OnNominationRemoved(const String:map[], client);
-
-
 /**
  * Called when a map's weight is being reweighted. Allows plugin to modify the
  * weight by calling UMC_AddWeightModifier.
@@ -130,7 +102,6 @@ enum UMC_VoteResponse
  */
 forward UMC_OnReweightMap(Handle:kv, const String:map[], const String:group[]);
 
-
 /**
  * Called when a group's weight is being reweighted.
  *
@@ -141,7 +112,6 @@ forward UMC_OnReweightMap(Handle:kv, const String:map[], const String:group[]);
  */
 forward UMC_OnReweightGroup(Handle:kv, const String:group[]);
 
-
 /**
  * Adds a MapWeightModifier to UMC's internal modifier list.
  *
@@ -150,7 +120,6 @@ forward UMC_OnReweightGroup(Handle:kv, const String:group[]);
  * @noreturn
  */
 native UMC_AddWeightModifier(Float:amt);
-
 
 /**
  * Called when a map is being considered for exclusion.
@@ -165,7 +134,6 @@ native UMC_AddWeightModifier(Float:amt);
  */
 forward Action:UMC_OnDetermineMapExclude(Handle:kv, const String:map[], const String:group[],
     bool:isNomination, bool:forMapChange);
- 
  
 /**
  * Starts a UMC map vote.
@@ -205,7 +173,6 @@ native bool:UMC_StartVote(const String:id[], Handle:mapcycle, Handle:originalMap
     UMC_RunoffFailAction:runoffFailAction, const String:runoffSound[], bool:nominationStrictness,
     bool:allowDuplicates, const clients[], numClients, bool:runExclusion=true);
     
-    
 /**
  * Fetches a random map from a given map group in a given mapcycle.
  *
@@ -225,7 +192,6 @@ native bool:UMC_GetRandomMap(Handle:mapcycle, Handle:originalMapcycle, const Str
                              String:buffer[], size, String:groupBuffer[], gBufferSize,
                              bool:isNomination, bool:forMapChange);
                              
-                             
 /**
  * Sets the next map and map group for UMC.
  *
@@ -239,7 +205,6 @@ native bool:UMC_GetRandomMap(Handle:mapcycle, Handle:originalMapcycle, const Str
 native UMC_SetNextMap(Handle:mapcycle, const String:map[], const String:group[],
                       UMC_ChangeMapTime:when);
 
-
 /**
  * Determines if the given map from the given group is nominated.
  *
@@ -249,7 +214,6 @@ native UMC_SetNextMap(Handle:mapcycle, const String:map[], const String:group[],
  * @return True if the map is nominated, false otherwise.
  */
 native bool:UMC_IsMapNominated(const String:map[], const String:group[]);
-
 
 /**
  * Nominates a map for UMC.
@@ -267,17 +231,6 @@ native bool:UMC_NominateMap(Handle:mapcycle, const String:map[], const String:gr
  
 
 /**
- * Determines if the given group is valid (has at least 1 valid map in it) for the given mapcycle.
- *
- * @param mapcycle  Mapcycle containing the group. Should contain all information the user has defined.
- * @param group The group to be checked.
- * 
- * @return True if the group is valid, false otherwise.
- */
-//native bool:UMC_IsGroupValid(Handle:mapcycle, const String:group[]);
-
-
-/**
  * Determines if the given map is valid for the given mapcycle.
  *
  * @param mapcycle  Mapcycle containing the map. Should contain all information the user has defined.
@@ -290,7 +243,6 @@ native bool:UMC_NominateMap(Handle:mapcycle, const String:map[], const String:gr
  */
 native bool:UMC_IsMapValid(Handle:mapcycle, const String:map[], const String:group[], bool:isNom,
                            bool:forMapChange);
-
 
 /**
  * Returns a copy of the given mapcycle with all invalid maps and groups filtered out.
@@ -319,7 +271,6 @@ native Handle:UMC_FilterMapcycle(Handle:mapcycle, Handle:originalMapcycle, bool:
 native Handle:UMC_CreateValidMapArray(Handle:mapcycle, Handle:originalMapcycle,
                                       const String:group[], bool:isNom, bool:forMapChange);
 
-
 /**
  * Returns an array consisting of all the valid groups in the given mapcycle. A valid group is a
  * group with 1 or more valid maps in it.
@@ -334,14 +285,12 @@ native Handle:UMC_CreateValidMapArray(Handle:mapcycle, Handle:originalMapcycle,
 native Handle:UMC_CreateValidMapGroupArray(Handle:kv, Handle:originalMapcycle, bool:isNom,
                                            bool:forMapChange);
 
-
 /**
  * Called when has extended the map.
  * 
  * @noreturn
  */
 forward UMC_OnMapExtended();
-
 
 /**
  * Called when a vote has failed. This can be due to the Don't Change option winning the vote or the
@@ -350,7 +299,6 @@ forward UMC_OnMapExtended();
  * @noreturn
  */
 forward UMC_OnVoteFailed(); //UMC_FailReason:reason);
-
 
 /**
  * Called immediately after UMC has set a next map.
@@ -365,7 +313,6 @@ forward UMC_OnVoteFailed(); //UMC_FailReason:reason);
 forward UMC_OnNextmapSet(Handle:kv, const String:map[], const String:group[],
                          const String:display[]);
 
-
 /**
  * Called when the "sm_umc_reload" command is used. If your plugin has its own mapcycle, you should
  * reload it in this forward.
@@ -373,7 +320,6 @@ forward UMC_OnNextmapSet(Handle:kv, const String:map[], const String:group[],
  * @noreturn
  */
 forward UMC_RequestReloadMapcycle();
-
 
 /**
  * Retrieves the name of the current map group.
@@ -395,7 +341,6 @@ native UMC_GetCurrentMapGroup(String:buffer[], size);
  */
 native bool:UMC_IsVoteInProgress(const String:id[]);
 
-
 /**
  * Stops a UMC vote that is currently in progress.
  *
@@ -404,7 +349,6 @@ native bool:UMC_IsVoteInProgress(const String:id[]);
  * @return True on success, false otherwise.
  */
 native bool:UMC_StopVote(const String:id[]);
-
 
 /**
  * Callback for when a vote is to be started by UMC. Note that all Handles will be freed after the
@@ -469,7 +413,6 @@ native UMC_VoteManagerVoteCompleted(const String:id[], Handle:voteOptions, UMC_V
  */
 native UMC_VoteManagerVoteCancelled(const String:id[]);
                                     
-
 /**
  * Unregisters a Vote Manager from UMC.
  * 
@@ -486,38 +429,32 @@ native UMC_UnregisterVoteManager(const String:id[]);
  */
 forward UMC_DisplayMapCycle(client, bool:filtered);
 
-
 /**
  *
  */
 forward UMC_VoteStarted(const String:voteManagerId[], const clients[], numClients, 
                         Handle:voteOptions);
 
-
 /**
  *
  */
 forward UMC_VoteEnded(const String:voteManagerId[], UMC_VoteResponse:reason);
-
 
 /**
  *
  */
 forward UMC_ClientVoted(const String:voteManagerId[], client, Handle:option);
 
-
 /**
  *
  */
 native UMC_VoteManagerClientVoted(const String:id[], client, Handle:option);
-
 
 /**
  *
  */
 forward UMC_OnFormatTemplateString(String:template[], maxlen, Handle:kv, const String:map[], 
                                    const String:group[]);
-
 
 /**
  *
