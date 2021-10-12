@@ -15,6 +15,6 @@ project **will** be unstable. You **should** be using the original UMC.
 
 Uncletopia Map Chooser is a fork of the [Universal Map
 Chooser](https://github.com/Silenci0/UMC), which is licensed under
-[GPLv3](blob/master/GPLv3.txt). Therefore, this fork follows the same license.
+[GPLv3](LICENSE). Therefore, this fork follows the same license.
 
 It was originally built by Steell and Powerlord, then picked up by Mr.Silence.
