@@ -12,7 +12,8 @@
 #define AUTOUPDATE_ENABLE 0
 #define AUTOUPDATE_DEV 0
 
-//SourceMod Malarky
+// SourceMod Malarky
+// TODO: why?
 public SharedPlugin:__pl_umccore =
 {
     name = "umccore",
@@ -129,12 +130,12 @@ native UMC_AddWeightModifier(Float:amt);
  * @param group The group that the map belongs to.
  * @param isNomination  Specifies whether this is a nominated map or not.
  * @param forMapChange  Whether or not this map will be used this game frame for a mapchange.
- * 
+ *
  * @return  Plugin_Continue to keep the map, Plugin_Stop to exclude the map.
  */
 forward Action:UMC_OnDetermineMapExclude(Handle:kv, const String:map[], const String:group[],
     bool:isNomination, bool:forMapChange);
- 
+
 /**
  * Starts a UMC map vote.
  *
@@ -163,7 +164,7 @@ forward Action:UMC_OnDetermineMapExclude(Handle:kv, const String:map[], const St
  * @param clients   String of flags required for players to see the vote.
  * @param numClients    Number of clients to read from clients array.
  * @param runExclusion  Determines if UMC will filter the mapcycle through the Map Exclusion system.
- * 
+ *
  * @return True on success, false on failure.
  */
 native bool:UMC_StartVote(const String:id[], Handle:mapcycle, Handle:originalMapcycle,
@@ -172,7 +173,7 @@ native bool:UMC_StartVote(const String:id[], Handle:mapcycle, Handle:originalMap
     UMC_ChangeMapTime:successAction, UMC_VoteFailAction:failAction, maxRunoffs, maxRunoffMaps,
     UMC_RunoffFailAction:runoffFailAction, const String:runoffSound[], bool:nominationStrictness,
     bool:allowDuplicates, const clients[], numClients, bool:runExclusion=true);
-    
+
 /**
  * Fetches a random map from a given map group in a given mapcycle.
  *
@@ -191,7 +192,7 @@ native bool:UMC_StartVote(const String:id[], Handle:mapcycle, Handle:originalMap
 native bool:UMC_GetRandomMap(Handle:mapcycle, Handle:originalMapcycle, const String:group[],
                              String:buffer[], size, String:groupBuffer[], gBufferSize,
                              bool:isNomination, bool:forMapChange);
-                             
+
 /**
  * Sets the next map and map group for UMC.
  *
@@ -199,7 +200,7 @@ native bool:UMC_GetRandomMap(Handle:mapcycle, Handle:originalMapcycle, const Str
  * @param map   The name of the map
  * @param group The name of the map group containing the map.
  * @param when  When the map should be changed to the set next map.
- * 
+ *
  * @noreturn
  */
 native UMC_SetNextMap(Handle:mapcycle, const String:map[], const String:group[],
@@ -226,9 +227,9 @@ native bool:UMC_IsMapNominated(const String:map[], const String:group[]);
  *
  * @return True on success, false otherwise.
  */
-native bool:UMC_NominateMap(Handle:mapcycle, const String:map[], const String:group[], client, 
+native bool:UMC_NominateMap(Handle:mapcycle, const String:map[], const String:group[], client,
                             const String:nominationGroup[]=INVALID_HANDLE);
- 
+
 
 /**
  * Determines if the given map is valid for the given mapcycle.
@@ -259,7 +260,7 @@ native Handle:UMC_FilterMapcycle(Handle:mapcycle, Handle:originalMapcycle, bool:
 
 /**
  * Returns an array consisting of all the valid maps in the given mapcycle.
- * 
+ *
  * @param mapcycle  Mapcycle to look for maps in.
  * @param originalMapcycle  Original mapcycle, contains all information that the user has defined.
  * @param group Group to select maps from. If INVALID_GROUP, all groups are looked in.
@@ -287,7 +288,7 @@ native Handle:UMC_CreateValidMapGroupArray(Handle:kv, Handle:originalMapcycle, b
 
 /**
  * Called when has extended the map.
- * 
+ *
  * @noreturn
  */
 forward UMC_OnMapExtended();
@@ -295,10 +296,10 @@ forward UMC_OnMapExtended();
 /**
  * Called when a vote has failed. This can be due to the Don't Change option winning the vote or the
  * winning map not winning by a high enough percentage.
- * 
+ *
  * @noreturn
  */
-forward UMC_OnVoteFailed(); //UMC_FailReason:reason);
+forward UMC_OnVoteFailed();
 
 /**
  * Called immediately after UMC has set a next map.
@@ -307,7 +308,7 @@ forward UMC_OnVoteFailed(); //UMC_FailReason:reason);
  * @param map   The name of the winning map.
  * @param group The group of the winning map.
  * @param display    The "display name" of the winning map.
- * 
+ *
  * @noreturn
  */
 forward UMC_OnNextmapSet(Handle:kv, const String:map[], const String:group[],
@@ -399,7 +400,7 @@ typedef UMC_VoteResponseHandler = function void(UMC_VoteResponse response, const
  * @param id Id of the Vote Manager which has completed.
  * @param voteOptions adt_array of options in the vote
  * @param callback Callback for processing the results of the vote.
- * 
+ *
  * @noreturn
  */
 native UMC_VoteManagerVoteCompleted(const String:id[], Handle:voteOptions, UMC_VoteResponseHandler:callback);
@@ -412,10 +413,10 @@ native UMC_VoteManagerVoteCompleted(const String:id[], Handle:voteOptions, UMC_V
  * @param id ID of the Vote Manager to cancel.
  */
 native UMC_VoteManagerVoteCancelled(const String:id[]);
-                                    
+
 /**
  * Unregisters a Vote Manager from UMC.
- * 
+ *
  * @param id ID of the Vote Manager to unregister.
  */
 native UMC_UnregisterVoteManager(const String:id[]);
@@ -423,7 +424,7 @@ native UMC_UnregisterVoteManager(const String:id[]);
 
 /**
  * Called when UMC requests a Map Cycle to be displayed.
- * 
+ *
  * @param client Client to display the Map Cycle to.
  * @param filtered If true, it is requested that mapcycle only shows maps which pass UMC exclusion.
  */
@@ -432,7 +433,7 @@ forward UMC_DisplayMapCycle(client, bool:filtered);
 /**
  *
  */
-forward UMC_VoteStarted(const String:voteManagerId[], const clients[], numClients, 
+forward UMC_VoteStarted(const String:voteManagerId[], const clients[], numClients,
                         Handle:voteOptions);
 
 /**
@@ -453,7 +454,7 @@ native UMC_VoteManagerClientVoted(const String:id[], client, Handle:option);
 /**
  *
  */
-forward UMC_OnFormatTemplateString(String:template[], maxlen, Handle:kv, const String:map[], 
+forward UMC_OnFormatTemplateString(String:template[], maxlen, Handle:kv, const String:map[],
                                    const String:group[]);
 
 /**
@@ -469,3 +470,5 @@ native UMC_FormatDisplayString(String:display[], maxlen, Handle:mapcycle, const 
  * @return  True if we can start a new vote, false otherwise.
  */
 native bool:UMC_IsNewVoteAllowed(const String:id[]="core");
+
+// vim: set ft=sourcepawn:
