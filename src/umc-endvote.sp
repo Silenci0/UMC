@@ -1183,16 +1183,6 @@ public StartMapVote()
 //************************************************************************************************//
 //                                   ULTIMATE MAPCHOOSER EVENTS                                   //
 //************************************************************************************************//
-//Called when UMC has extended a map.
-public UMC_OnMapExtended()
-{
-    UpdateTimers();
-    UpdateOtherTimers();
-    extend_counter++;
-    vote_completed = false;
-    vote_enabled = true;
-    vote_failed = false;
-}
 
 //Called when UMC has set a next map.
 public UMC_OnNextmapSet(Handle:kv, const String:map[], const String:group[], const String:display[])

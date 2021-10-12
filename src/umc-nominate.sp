@@ -770,12 +770,6 @@ public UMC_OnNextmapSet(Handle:kv, const String:map[], const String:group[], con
     vote_completed = true;
 }
 
-//Called when UMC has extended a map.
-public UMC_OnMapExtended()
-{
-    vote_completed = false;
-}
-
 //Called when UMC requests that the mapcycle is printed to the console.
 public UMC_DisplayMapCycle(client, bool:filtered)
 {

@@ -287,13 +287,6 @@ native Handle:UMC_CreateValidMapGroupArray(Handle:kv, Handle:originalMapcycle, b
                                            bool:forMapChange);
 
 /**
- * Called when has extended the map.
- *
- * @noreturn
- */
-forward UMC_OnMapExtended();
-
-/**
  * Called when a vote has failed. This can be due to the Don't Change option winning the vote or the
  * winning map not winning by a high enough percentage.
  *

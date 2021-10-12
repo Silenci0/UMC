@@ -35,42 +35,38 @@ Handle cvar_dontchange_display  = INVALID_HANDLE;
 Handle cvar_valvemenu           = INVALID_HANDLE;
 Handle cvar_version             = INVALID_HANDLE;
 Handle cvar_count_sound         = INVALID_HANDLE;
-Handle cvar_extend_command      = INVALID_HANDLE;
 Handle cvar_default_vm          = INVALID_HANDLE;
 Handle cvar_block_slots         = INVALID_HANDLE;
 Handle cvar_novote              = INVALID_HANDLE;
 Handle cvar_nommsg_disp         = INVALID_HANDLE;
 Handle cvar_mapnom_display      = INVALID_HANDLE;
 
-//Stores the current category.
+// Stores the current category.
 char current_cat[MAP_LENGTH];
 
-//Stores the category of the next map.
+// Stores the category of the next map.
 char next_cat[MAP_LENGTH];
 
-//Array of nomination tries.
+// Array of nomination tries.
 Handle nominations_arr = INVALID_HANDLE;
 
-//Forward for when a nomination is removed.
+// Forward for when a nomination is removed.
 Handle nomination_reset_forward = INVALID_HANDLE;
 
-//Sound used during countdown to map vote
+// Sound used during countdown to map vote
 char countdown_sound[PLATFORM_MAX_PATH];
 
 /* Reweight System */
 Handle reweight_forward = INVALID_HANDLE;
 Handle reweight_group_forward = INVALID_HANDLE;
 bool reweight_active = false;
-Float current_weight;
+float current_weight;
 
 /* Exclusion System */
 Handle exclude_forward = INVALID_HANDLE;
 
 /* Reload System */
 Handle reload_forward = INVALID_HANDLE;
-
-/* Extend System */
-Handle extend_forward = INVALID_HANDLE;
 
 /* Nextmap System */
 Handle nextmap_forward = INVALID_HANDLE;
@@ -95,11 +91,6 @@ Handle template_forward = INVALID_HANDLE;
 
 //Flags
 bool change_map_round; //Change map when the round ends?
-
-//Misc ConVars
-Handle cvar_maxrounds = INVALID_HANDLE;
-Handle cvar_fraglimit = INVALID_HANDLE;
-Handle cvar_winlimit  = INVALID_HANDLE;
 
 //************************************************************************************************//
 //                                        SOURCEMOD EVENTS                                        //
@@ -160,12 +151,6 @@ public OnPluginStart()
         "Specifies the default UMC Vote Manager to be used for voting. The default value of \"core\" means that Sourcemod's built-in voting will be used."
     );
 
-    cvar_extend_command = CreateConVar(
-        "sm_umc_extend_command",
-        "",
-        "Specifies a server command to be executed when the map is extended by UMC."
-    );
-
     cvar_count_sound = CreateConVar(
         "sm_umc_countdown_sound",
         "",
@@ -198,7 +183,7 @@ public OnPluginStart()
         "0",
         "Determines where in votes the nominated maps will be displayed.\n 0 - Bottom,\n 1 - Top",
         0, true, 0.0, true, 1.0
-    );
+    ); // TODO: drop feature
 
     cvar_logging = CreateConVar(
         "sm_umc_logging_verbose",
@@ -212,7 +197,7 @@ public OnPluginStart()
         "0",
         "Specifies whether runoff votes are only displayed to players whose votes were eliminated in the runoff and players who did not vote.",
         0, true, 0.0, true, 1.0
-    );
+    ); // TODO: drop feature (why complicate it so fucking much)
 
     cvar_vote_tieramount = CreateConVar(
         "sm_umc_vote_tieramount",
@@ -225,13 +210,13 @@ public OnPluginStart()
         "sm_umc_runoff_display",
         "C",
         "Determines where the Runoff Vote Message is displayed on the screen.\n C - Center Message\n S - Chat Message\n T - Top Message\n H - Hint Message"
-    );
+    ); // TODO: drop feature
 
     cvar_vote_tierdisplay = CreateConVar(
         "sm_umc_vote_tierdisplay",
         "C",
         "Determines where the Tiered Vote Message is displayed on the screen.\n C - Center Message\n S - Chat Message\n T - Top Message\n H - Hint Message"
-    );
+    ); // TODO: drop feature
 
     // Create the config if it doesn't exist, and then execute it.
     AutoExecConfig(true, "ultimate-mapchooser");
@@ -249,16 +234,11 @@ public OnPluginStart()
     HookEventEx("arena_win_panel",    Event_RoundEnd); //TF2
 
     // Initialize our vote arrays
-    nominations_arr = CreateArray();
+    nominations_arr = new ArrayList();
 
     // Make listeners for player chat. Needed to recognize chat commands ("rtv", etc.)
     AddCommandListener(OnPlayerChat, "say");
     AddCommandListener(OnPlayerChat, "say_team");
-
-    // Fetch Cvars
-    cvar_maxrounds = FindConVar("mp_maxrounds");
-    cvar_fraglimit = FindConVar("mp_fraglimit");
-    cvar_winlimit  = FindConVar("mp_winlimit");
 
     //Load the translations file
     LoadTranslations("ultimate-mapchooser.phrases");
@@ -268,7 +248,6 @@ public OnPluginStart()
     reweight_group_forward      = CreateGlobalForward("UMC_OnReweightGroup", ET_Ignore, Param_Cell, Param_String);
     exclude_forward             = CreateGlobalForward("UMC_OnDetermineMapExclude", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_Cell);
     reload_forward              = CreateGlobalForward("UMC_RequestReloadMapcycle", ET_Ignore);
-    extend_forward              = CreateGlobalForward("UMC_OnMapExtended", ET_Ignore);
     nextmap_forward             = CreateGlobalForward("UMC_OnNextmapSet", ET_Ignore, Param_Cell, Param_String, Param_String, Param_String);
     failure_forward             = CreateGlobalForward("UMC_OnVoteFailed", ET_Ignore);
     maplistdisplay_forward      = CreateGlobalForward("UMC_DisplayMapCycle", ET_Ignore, Param_Cell, Param_Cell);
@@ -318,7 +297,7 @@ public OnConfigsExecuted()
 }
 
 //Called when a player types in chat required to handle user commands.
-public Action OnPlayerChat(client, const char command[], argc)
+public Action OnPlayerChat(client, const char[] command, argc)
 {
     // Return immediately if nothing was typed.
     if (argc == 0)
@@ -327,7 +306,7 @@ public Action OnPlayerChat(client, const char command[], argc)
     }
 
     // Get what was typed.
-    const text[13];
+    char text[13]; // TODO: why 13?
     GetCmdArg(1, text, sizeof(text));
 
     return Plugin_Continue;
@@ -400,12 +379,13 @@ public OnMapEnd()
 //************************************************************************************************//
 //                                             NATIVES                                            //
 //************************************************************************************************//
-public Native_UMCIsNewVoteAllowed(Handle:plugin, numParams)
+public Native_UMCIsNewVoteAllowed(Handle plugin, numParams)
 {
     //Retrieve the vote manager.
     int len;
     GetNativeStringLength(1, len);
-    char voteManagerID[len+1];
+    char[] voteManagerID = new char[len+1];
+
     if (len > 0)
     {
         GetNativeString(1, voteManagerID, len+1);
@@ -422,26 +402,26 @@ public Native_UMCIsNewVoteAllowed(Handle:plugin, numParams)
         if (StrEqual(voteManagerID, "core"))
         {
             LogError("FATAL: Could not find core vote manager. Aborting vote.");
-            return _:false;
+            return false;
         }
         LogError("Could not find a vote manager matching ID \"%s\". Using \"core\" instead.");
         if (!GetTrieValue(vote_managers, "core", voteManager))
         {
             LogError("FATAL: Could not find core vote manager. Aborting vote.");
-            return _:false;
+            return false;
         }
         strcopy(voteManagerID, len+1, "core");
     }
 
-    new bool:vote_inprogress;
+    bool vote_inprogress;
     GetTrieValue(voteManager, "in_progress", vote_inprogress);
 
     if (vote_inprogress)
     {
-        return _:false;
+        return false;
     }
 
-    return _:!IsVMVoteInProgress(voteManager);
+    return !IsVMVoteInProgress(voteManager);
 }
 
 public Native_UMCFormatDisplay(Handle:plugin, numParams)
@@ -3691,44 +3671,18 @@ public Action:Handle_TieredVoteTimer(Handle:timer, Handle:pack)
     return Plugin_Stop;
 }
 
-//Extend the current map.
+// Extend the current map.
+// Instead of just extending it, we're going to re-pick it instead to scramble teams, reset scores and rerun configs.
+// This conveniently also fixes a bug where extending during an end map vote would not actually do anything.
 ExtendMap(Handle:vM)
 {
     DisableVoteInProgress(vM);
-    new Float:extend_timestep;
-    new extend_roundstep;
-    new extend_fragstep;
-    GetTrieValue(vM, "extend_timestep", extend_timestep);
-    GetTrieValue(vM, "extend_roundstep", extend_roundstep);
-    GetTrieValue(vM, "extend_fragstep", extend_fragstep);
 
-    // Generic/Used in most games
-    if (cvar_maxrounds != INVALID_HANDLE && GetConVarInt(cvar_maxrounds) > 0)
-    {
-        SetConVarInt(cvar_maxrounds, GetConVarInt(cvar_maxrounds) + extend_roundstep);
-    }
-    if (cvar_winlimit != INVALID_HANDLE && GetConVarInt(cvar_winlimit) > 0)
-    {
-        SetConVarInt(cvar_winlimit, GetConVarInt(cvar_winlimit) + extend_roundstep);
-    }
-    if (cvar_fraglimit != INVALID_HANDLE && GetConVarInt(cvar_fraglimit) > 0)
-    {
-        SetConVarInt(cvar_fraglimit, GetConVarInt(cvar_fraglimit) + extend_fragstep);
-    }
+    UMC_ChangeMapTime change_map_now = ChangeMapTime_Now;
+    char mapname[128];
+    GetCurrentMap(mapname, sizeof(mapname));
 
-    //Extend the time limit.
-    ExtendMapTimeLimit(RoundToNearest(extend_timestep * 60));
-
-    //Execute the extend command
-    decl String:command[64];
-    GetConVarString(cvar_extend_command, command, sizeof(command));
-    if (strlen(command) > 0)
-    {
-        ServerCommand(command);
-    }
-    //Call the extend forward.
-    Call_StartForward(extend_forward);
-    Call_Finish();
+    DoMapChange(change_map_now, INVALID_HANDLE, mapname, "", "");
 
     //Log some stuff.
     LogUMCMessage("MAPVOTE: Map extended.");
