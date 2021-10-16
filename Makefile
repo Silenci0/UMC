@@ -1,5 +1,5 @@
-.PHONY: all clean release revision
-.NOTPARALLEL: release clean
+.PHONY: all clean release install upgrade
+.NOTPARALLEL: release clean install upgrade
 
 COMPILER_DIR ?= $(HOME)/serverfiles/tf/addons/sourcemod/scripting
 COMPILER_NAME ?= spcomp64
@@ -7,6 +7,8 @@ COMPILER = $(COMPILER_DIR)/$(COMPILER_NAME)
 
 INCLUDES_DIR = src/include
 COMPILER_FLAGS = -i "$(INCLUDES_DIR)" -i "$(COMPILER_DIR)/include" -D "build/"
+
+INSTALL_DIR ?= $(HOME)/serverfiles/tf/
 
 sources = $(wildcard src/*.sp)
 objects = $(sources:src/%.sp=build/%.smx)
@@ -32,3 +34,11 @@ release: clean all
 	cp config/vote_warnings.txt build/release
 	tar -cjvf "build/$(revision).tar.bz2" -C build/release .
 	make clean
+
+# Note that installing will reset all of the existing configs. You probably do
+# not want that if you are upgrading.
+install: release
+	tar -xjvf "build/$(revision).tar.bz2" -C "$(INSTALL_DIR)"
+
+upgrade: clean all
+	mv -v build/*.smx "$(INSTALL_DIR)/addons/sourcemod/plugins"

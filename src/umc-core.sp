@@ -32,7 +32,6 @@ Handle cvar_vote_tierdisplay    = INVALID_HANDLE;
 Handle cvar_logging             = INVALID_HANDLE;
 Handle cvar_extend_display      = INVALID_HANDLE;
 Handle cvar_dontchange_display  = INVALID_HANDLE;
-Handle cvar_version             = INVALID_HANDLE;
 Handle cvar_count_sound         = INVALID_HANDLE;
 Handle cvar_default_vm          = INVALID_HANDLE;
 Handle cvar_block_slots         = INVALID_HANDLE;
@@ -269,15 +268,7 @@ public OnMapStart()
     strcopy(current_cat, sizeof(current_cat), next_cat);
     strcopy(next_cat, sizeof(next_cat), INVALID_GROUP);
 
-    // TODO: why?
-    CreateTimer(5.0, UpdateTrackingCvar);
-
     CacheSound(countdown_sound); // TODO: delete sound
-}
-
-public Action UpdateTrackingCvar(Handle timer)
-{
-    SetConVarString(cvar_version, PL_VERSION, false, false);
 }
 
 //Called after all config files were executed.
