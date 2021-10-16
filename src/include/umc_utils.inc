@@ -321,7 +321,7 @@ stock DisplayServerMessage(const String:msg[], const String:type[])
         decl String:sColor[16];
         new iColor = -1, iPos = BreakString(sTextTmp, sColor, sizeof(sColor));
 
-        for (new i = 0; i < sizeof(g_sTColors); i++)
+        for (int i = 0; i < sizeof(g_sTColors); i++)
         {
             if (StrEqual(sColor, g_sTColors[i]))
             {
@@ -1027,44 +1027,45 @@ stock bool:ClientHasAdminFlags(client, const String:flagString[])
 // sub key in the KV to run the search.
 // Second, it searchs the updated KV for the group that our map is in and filters the information until we only
 // have the map and group information left over.
-stock FilterMapcycleFromArrays(Handle:kv, Handle:exMaps, Handle:exGroups, numExGroups, bool:deleteEmpty=false)
+stock FilterMapcycleFromArrays(KeyValues kv, ArrayList exMaps, ArrayList exGroups, int numExGroups, bool deleteEmpty = false)
 {
-    new size = GetArraySize(exGroups);
-    new len = size < numExGroups ? size : numExGroups;
-    decl String:group[MAP_LENGTH];
-    for (new i = 0; i < len; i++)
+    int size = exGroups.Length;
+    int len = size < numExGroups ? size : numExGroups;
+    char group[MAP_LENGTH];
+
+    // Exclude all GROUPS from exGroups array.
+    for (int i = 0; i < len; i++)
     {
         GetArrayString(exGroups, i, group, sizeof(group));
-        if (!deleteEmpty)
+        if (deleteEmpty)
         {
-            KvJumpToKey(kv, group);
-            KvDeleteAllSubKeys(kv);
-            KvGoBack(kv);
+            KvDeleteSubKey(kv, group);
         }
         else
         {
-            KvDeleteSubKey(kv, group);
+            kv.JumpToKey(group);
+            KvDeleteAllSubKeys(kv);
+            kv.GoBack();
         }
     }
 
     if (!KvGotoFirstSubKey(kv))
-    {
         return;
-    }
 
     for ( ; ; )
     {
-        FilterMapGroupFromArrays(kv, exMaps, exGroups);
+        // Here we purposefully ignore groups so that we don't run into a
+        // situation where a map that should be ignored isn't because it's in
+        // two groups at the same time
+        FilterMapGroupFromArrays(kv, exMaps, exGroups, true);
 
-        //Delete the group if there are no valid maps in it.
+        // Delete the group if there are no valid maps in it.
         if (deleteEmpty)
         {
-            if (!KvGotoFirstSubKey(kv))
+            if (!kv.GotoFirstSubKey())
             {
-                //DEBUG_MESSAGE("Removing empty group \"%s\".", group)
-                if (KvDeleteThis(kv) == -1)
+                if (kv.DeleteThis() == -1)
                 {
-                   // DEBUG_MESSAGE("Mapcycle filtering completed.")
                     return;
                 }
                 else
@@ -1073,83 +1074,61 @@ stock FilterMapcycleFromArrays(Handle:kv, Handle:exMaps, Handle:exGroups, numExG
                 }
             }
 
-            KvGoBack(kv);
+            kv.GoBack();
         }
-        if (!KvGotoNextKey(kv))
+
+        if (!kv.GotoNextKey())
+            break;
+    }
+
+    kv.GoBack();
+}
+
+
+// Filters the maps from all groups they appear in.
+stock FilterMapGroupFromArrays(KeyValues kv, ArrayList exMaps, ArrayList exGroups, bool ignoreGroups = false)
+{
+    char group[MAP_LENGTH];
+    kv.GetSectionName(group, sizeof(group));
+
+    if (!kv.GotoFirstSubKey())
+        return;
+
+    char mapName[MAP_LENGTH];
+    for ( ; ; )
+    {
+        kv.GetSectionName(mapName, sizeof(mapName));
+        if (IsMapInArrays(mapName, group, exMaps, exGroups, ignoreGroups))
         {
+            kv.DeleteThis();
+        }
+        else if (!kv.GotoNextKey()) {
             break;
         }
     }
 
-    KvGoBack(kv);
-
-    //DEBUG_MESSAGE("Mapcycle filtering completed.")
+    kv.GoBack();
 }
 
-
-//Filters the kv at the level of the map group.
-stock FilterMapGroupFromArrays(Handle:kv, Handle:exMaps, Handle:exGroups)
+stock bool IsMapInArrays(const char[] map, const char[] group, ArrayList exMaps, ArrayList exGroups, bool ignoreGroups = false)
 {
-    decl String:group[MAP_LENGTH];
-    KvGetSectionName(kv, group, sizeof(group));
+    int index = -1;
+    bool isExcluded = false;
+    char exGroup[MAP_LENGTH];
 
-    if (!KvGotoFirstSubKey(kv))
+    if (exMaps == null || exGroups == null)
+        return false;
+    
+    do
     {
-        return;
-    }
-
-    //DEBUG_MESSAGE("Starting filtering of map group \"%s\".", group)
-
-    decl String:mapName[MAP_LENGTH];
-    for ( ; ; )
-    {
-        KvGetSectionName(kv, mapName, sizeof(mapName));
-        if (IsMapInArrays(mapName, group, exMaps, exGroups))
+        index = FindStringInArrayEx(exMaps, map, index+1);
+        if (index >= 0 && index < exGroups.Length)
         {
-            //DEBUG_MESSAGE("Removing invalid map \"%s\" from group \"%s\".", mapName, group)
-            if (KvDeleteThis(kv) == -1)
-            {
-                //DEBUG_MESSAGE("Map Group filtering completed for group \"%s\".", group)
-                return;
-            }
-        }
-        else
-        {
-            if (!KvGotoNextKey(kv))
-            {
-                break;
-            }
+            exGroups.GetString(index, exGroup, sizeof(exGroup));
+            isExcluded = ignoreGroups ? true : StrEqual(exGroup, group, false);
         }
     }
-
-    KvGoBack(kv);
-
-    //DEBUG_MESSAGE("Map Group filtering completed for group \"%s\".", group)
-}
-
-
-stock bool:IsMapInArrays(const String:map[], const String:group[], Handle:exMaps, Handle:exGroups)
-{
-    //DEBUG_MESSAGE("Starting exclusion traversal...")
-    new index = -1;
-    new bool:isExcluded = false;
-    decl String:exGroup[MAP_LENGTH];
-    if (exMaps != INVALID_HANDLE && exGroups != INVALID_HANDLE)
-    {
-        new gSize = GetArraySize(exGroups);
-        do
-        {
-            index = FindStringInArrayEx(exMaps, map, index+1);
-            if (index >= 0 && index < gSize)
-            {
-                //DEBUG_MESSAGE("Map found at %i", index)
-                GetArrayString(exGroups, index, exGroup, sizeof(exGroup));
-                isExcluded = StrEqual(exGroup, group, false);
-                //DEBUG_MESSAGE("Map Excluded? %i (%s | %s)", _:isExcluded, exGroup, group)
-            }
-        }
-        while (!isExcluded && index != -1);
-    }
+    while (!isExcluded && index != -1);
 
     return isExcluded;
 }
@@ -1167,7 +1146,7 @@ stock bool:GroupExcludedPreviouslyPlayed(const String:group[], Handle:exGroups, 
 }
 
 
-stock bool:MapExcludedPreviouslyPlayed(const String:map[], const String:group[], Handle:exMaps, Handle:exGroups, numExGroups)
+stock bool MapExcludedPreviouslyPlayed(const char[] map, const char[] group, ArrayList exMaps, ArrayList exGroups, numExGroups)
 {
     return GroupExcludedPreviouslyPlayed(group, exGroups, numExGroups) || IsMapInArrays(map, group, exMaps, exGroups);
 }

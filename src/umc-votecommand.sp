@@ -322,7 +322,12 @@ RemovePreviousMapsFromCycle()
 {
     map_kv = CreateKeyValues("umc_rotation");
     KvCopySubkeys(umc_mapcycle, map_kv);
-    FilterMapcycleFromArrays(map_kv, vote_mem_arr, vote_catmem_arr, GetConVarInt(cvar_vote_catmem));
+    FilterMapcycleFromArrays(
+        view_as<KeyValues>(map_kv),
+        view_as<ArrayList>(vote_mem_arr),
+        view_as<ArrayList>(vote_catmem_arr), 
+        GetConVarInt(cvar_vote_catmem)
+    );
 }
 
 //Sets up the vote sounds.

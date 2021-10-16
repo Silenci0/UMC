@@ -637,7 +637,7 @@ public Native_UMCVoteManagerComplete(Handle:plugin, numParams)
 }
 
 //native Handle:UMC_CreateValidMapArray(Handle:kv, const String:group[], bool:isNom, bool:forMapChange);
-public Native_UMCCreateMapArray(Handle plugin, int numParams)
+public Native_UMCCreateMapArray(Handle plugin, numParams)
 {
     new Handle:kv = CreateKeyValues("umc_rotation");
     new Handle:arg = Handle:GetNativeCell(1);

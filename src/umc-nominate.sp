@@ -191,8 +191,8 @@ public OnConfigsExecuted()
 //Required to handle user commands.
 public Action OnPlayerChat(client, const char[] command, int argc)
 {
-    // Return immediately if nothing was typed.
-    if (argc == 0)
+    // Return immediately if nothing was typed or if the speaker is console
+    if (argc == 0 || client == 0)
         return Plugin_Continue;
     
     if (!GetConVarBool(cvar_nominate))
@@ -212,24 +212,59 @@ public Action OnPlayerChat(client, const char[] command, int argc)
     if (vote_completed || !can_nominate)
     {
         PrintToChat(client, "[UMC] %t", "No Nominate Nextmap");
-        return Plugin_Stop;
+        return Plugin_Handled;
     }
 
     // If there are no arguments, display the nomination menu.
-    if (next == -1 && !DisplayNominationMenu(client)) {
-        PrintToChat(client, "[UMC] %t", "No Nominate Nextmap");
-        return Plugin_Stop;
+    if (next == -1) {
+        DisplayNominationMenu(client);
+        return Plugin_Handled;
     }
 
     // Get the name of the map from user input.
     BreakString(text[next], arg, sizeof(arg));
-    char groupName[MAP_LENGTH], nomGroup[MAP_LENGTH];
+
+    DoNominateMap(client, arg);
     
-    // Find the group and the name of the map from the map rotation.
-    if (!KvFindGroupOfMap(map_kv, arg, groupName, sizeof(groupName)))
+    return Plugin_Handled;
+}
+
+public Action Command_Nominate(int client, int args)
+{
+    if (!GetConVarBool(cvar_nominate))
+        return Plugin_Handled;
+    
+    if (vote_completed || !can_nominate) {
+        ReplyToCommand(client, "[UMC] %t", "No Nominate Nextmap");
+        return Plugin_Handled;
+    }
+
+    if (args == 0)
     {
-        PrintToChat(client, "Map \"%s\" is currently unavailable.", arg);
-        return Plugin_Stop;
+        if (!DisplayNominationMenu(client))
+            ReplyToCommand(client, "[UMC] %t", "No Nominate Nextmap");
+
+        return Plugin_Handled;
+    }
+
+    //Get what was typed.
+    char mapName[MAP_LENGTH];
+    GetCmdArg(1, mapName, sizeof(mapName));
+    TrimString(mapName);
+    
+    DoNominateMap(client, mapName);
+
+    return Plugin_Handled;
+}
+
+DoNominateMap(int client, char[] mapName)
+{
+    char groupName[MAP_LENGTH], nomGroup[MAP_LENGTH];
+
+    // Find the group and the name of the map from the map rotation.
+    if (!KvFindGroupOfMap(map_kv, mapName, groupName, sizeof(groupName))) {
+        PrintToChat(client, "Map \"%s\" is currently unavailable.", mapName);
+        return; 
     }
 
     map_kv.Rewind();
@@ -241,8 +276,8 @@ public Action OnPlayerChat(client, const char[] command, int argc)
     GetConVarString(cvar_flags, adminFlags, sizeof(adminFlags));
     map_kv.GetString(NOMINATE_ADMINFLAG_KEY, adminFlags, sizeof(adminFlags), adminFlags);
 
-    map_kv.JumpToKey(arg);
-    map_kv.GetSectionName(arg, sizeof(arg)); // ¿por qué?
+    map_kv.JumpToKey(mapName);
+    map_kv.GetSectionName(mapName, MAP_LENGTH); // ¿por qué?
     
     // Merge with map specific admin nomination flags
     map_kv.GetString(NOMINATE_ADMINFLAG_KEY, adminFlags, sizeof(adminFlags), adminFlags);
@@ -258,22 +293,21 @@ public Action OnPlayerChat(client, const char[] command, int argc)
     if (adminFlags[0] != '\0' && !(clientFlags & ReadFlagString(adminFlags)))
     {
         // TODO: Change to translation phrase
-        PrintToChat(client, "[UMC] Could not find map \"%s\"", arg);
+        PrintToChat(client, "[UMC] Could not find map \"%s\"", mapName);
     }
     else
     {
         // Nominate it.
-        UMC_NominateMap(map_kv, arg, groupName, client, nomGroup);
+        UMC_NominateMap(map_kv, mapName, groupName, client, nomGroup);
     
         // Display a message.
         char clientName[MAX_NAME_LENGTH];
         GetClientName(client, clientName, sizeof(clientName));
-        PrintToChatAll("[UMC] %t", "Player Nomination", clientName, arg);
-        LogUMCMessage("%s has nominated '%s' from group '%s'", clientName, arg, groupName);
+        PrintToChatAll("[UMC] %t", "Player Nomination", clientName, mapName);
+        LogUMCMessage("%s has nominated '%s' from group '%s'", clientName, mapName, groupName);
     }
-
-    return Plugin_Handled;
 }
+
 
 //************************************************************************************************//
 //                                              SETUP                                             //
@@ -321,94 +355,12 @@ RemovePreviousMapsFromCycle()
 {
     map_kv = CreateKeyValues("umc_rotation");
     KvCopySubkeys(umc_mapcycle, map_kv);
-    FilterMapcycleFromArrays(map_kv, vote_mem_arr, vote_catmem_arr, GetConVarInt(cvar_mem_group));
-}
-
-//************************************************************************************************//
-//                                            COMMANDS                                            //
-//************************************************************************************************//
-//sm_nominate
-public Action:Command_Nominate(client, args)
-{
-    if (!GetConVarBool(cvar_nominate))
-    {
-        return Plugin_Handled;
-    }
-    
-    if (vote_completed || !can_nominate)
-    {
-        ReplyToCommand(client, "[UMC] %t", "No Nominate Nextmap");
-    }
-    else //Otherwise, let them nominate.
-    {
-        if (args > 0)
-        {
-            //Get what was typed.
-            decl String:arg[MAP_LENGTH];
-            GetCmdArg(1, arg, sizeof(arg));
-            TrimString(arg);
-            
-            //Get the selected map.
-            decl String:groupName[MAP_LENGTH], String:nomGroup[MAP_LENGTH];
-                        
-            if (!KvFindGroupOfMap(map_kv, arg, groupName, sizeof(groupName)))
-            {
-                //TODO: Change to translation phrase
-                ReplyToCommand(client, "[UMC] Could not find map \"%s\"", arg);
-            }
-            else
-            {
-                KvRewind(map_kv);
-                
-                KvJumpToKey(map_kv, groupName);
-                
-                decl String:adminFlags[64];
-                GetConVarString(cvar_flags, adminFlags, sizeof(adminFlags));
-                
-                KvGetString(map_kv, NOMINATE_ADMINFLAG_KEY, adminFlags, sizeof(adminFlags), adminFlags);
-
-                KvJumpToKey(map_kv, arg);
-                
-                KvGetSectionName(map_kv, arg, sizeof(arg));
-                
-                KvGetString(map_kv, NOMINATE_ADMINFLAG_KEY, adminFlags, sizeof(adminFlags), adminFlags);
-                
-                KvGetString(map_kv, "nominate_group", nomGroup, sizeof(nomGroup), groupName);
-                
-                KvGoBack(map_kv);
-                KvGoBack(map_kv);
-
-                new clientFlags = GetUserFlagBits(client);
-                
-                //Check if admin flag set
-                if (adminFlags[0] != '\0' && !(clientFlags & ReadFlagString(adminFlags)))
-                {
-                    //TODO: Change to translation phrase
-                    ReplyToCommand(client, "[UMC] Could not find map \"%s\"", arg);
-                }
-                else
-                {
-                    //Nominate it.
-                    UMC_NominateMap(map_kv, arg, groupName, client, nomGroup);
-
-                    //Display a message.
-                    decl String:clientName[MAX_NAME_LENGTH];
-                    GetClientName(client, clientName, sizeof(clientName));
-                    PrintToChatAll("[UMC] %t", "Player Nomination", clientName, arg);
-                    LogUMCMessage("%s has nominated '%s' from group '%s'", clientName, arg, groupName);
-                }
-            }
-            
-        }
-        else
-        {
-            if (!DisplayNominationMenu(client))
-            {
-                ReplyToCommand(client, "[UMC] %t", "No Nominate Nextmap");
-            }
-        }                
-    }
-    return Plugin_Handled;
+    FilterMapcycleFromArrays(
+        view_as<KeyValues>(map_kv),
+        view_as<ArrayList>(vote_mem_arr),
+        view_as<ArrayList>(vote_catmem_arr), 
+        GetConVarInt(cvar_mem_group)
+    );
 }
 
 //************************************************************************************************//

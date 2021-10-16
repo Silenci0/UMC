@@ -106,48 +106,41 @@ bool:IsMapStillDelayed(const String:map[], const String:group[], minsDelayedMap,
 }
 
 //Called when UMC wants to know if this map is excluded
-public Action:UMC_OnDetermineMapExclude(Handle:kv, const String:map[], const String:group[], bool:isNom, bool:forMapChange)
+public Action UMC_OnDetermineMapExclude(Handle kvHandle, const char[] map, const char[] group, bool isNom, bool forMapChange)
 {
+    KeyValues kv = view_as<KeyValues>(kvHandle);
+
     if (isNom && GetConVarBool(cvar_nom_ignore))
-    {    
         return Plugin_Continue;
-    }
     
     if (!forMapChange && GetConVarBool(cvar_display_ignore))
-    {
         return Plugin_Continue;
-    }
     
-    if (kv == INVALID_HANDLE)
-    {
+    if (kv == null)
         return Plugin_Continue;
-    }
     
-    new def, val;
-    new gDef;
+    int exclusionTime, mapExclusionTime, groupExclusionTime;
     
-    KvRewind(kv);
-    if (KvJumpToKey(kv, group))
+    kv.Rewind();
+    if (kv.JumpToKey(group))
     {
-        gDef = KvGetNum(kv, POSTEX_KEY_GROUP, POSTEX_DEFAULT_VALUE);
-        def = KvGetNum(kv, POSTEX_KEY_DEFAULT, POSTEX_DEFAULT_VALUE);
+        groupExclusionTime = kv.GetNum(POSTEX_KEY_GROUP, POSTEX_DEFAULT_VALUE);
+        mapExclusionTime = kv.GetNum(POSTEX_KEY_DEFAULT, POSTEX_DEFAULT_VALUE);
     
-        if (KvJumpToKey(kv, map))
+        if (kv.JumpToKey(map))
         {    
-            val = KvGetNum(kv, POSTEX_KEY_MAP, def);
-            KvGoBack(kv);
+            exclusionTime = kv.GetNum(POSTEX_KEY_MAP, mapExclusionTime);
         }
         else
         {
-            val = def;
+            exclusionTime = groupExclusionTime;
         }
-        KvGoBack(kv);
+
+        kv.GoBack();
     }
     
-    if (IsMapStillDelayed(map, group, val, gDef))
-    {
+    if (IsMapStillDelayed(map, group, exclusionTime, groupExclusionTime))
         return Plugin_Stop;
-    }
     
     return Plugin_Continue;
 }

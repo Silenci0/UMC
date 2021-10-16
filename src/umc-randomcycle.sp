@@ -311,7 +311,13 @@ RemovePreviousMapsFromCycle()
 {
     map_kv = CreateKeyValues("umc_rotation");
     KvCopySubkeys(umc_mapcycle, map_kv);
-    FilterMapcycleFromArrays(map_kv, randnext_mem_arr, randnext_catmem_arr, GetConVarInt(cvar_randnext_catmem));
+
+    FilterMapcycleFromArrays(
+        view_as<KeyValues>(map_kv),
+        view_as<ArrayList>(randnext_mem_arr),
+        view_as<ArrayList>(randnext_catmem_arr), 
+        GetConVarInt(cvar_randnext_catmem)
+    );
 }
 
 //************************************************************************************************//
