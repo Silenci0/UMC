@@ -6,7 +6,7 @@ COMPILER_NAME ?= spcomp64
 COMPILER = $(COMPILER_DIR)/$(COMPILER_NAME)
 
 INCLUDES_DIR = src/include
-COMPILER_FLAGS = -i "$(INCLUDES_DIR)" -i "$(COMPILER_DIR)/include" -D "build/"
+COMPILER_FLAGS = -i "$(INCLUDES_DIR)" -i "$(COMPILER_DIR)/include" -D "build/" -O2 -v2
 
 INSTALL_DIR ?= $(HOME)/serverfiles/tf/
 

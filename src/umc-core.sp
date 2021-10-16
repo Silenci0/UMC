@@ -235,6 +235,7 @@ public OnPluginStart()
     LoadTranslations("ultimate-mapchooser.phrases");
 
     // Setup our forward for when a nomination is removed
+    nomination_reset_forward    = CreateGlobalForward("OnNominationRemoved", ET_Ignore, Param_String, Param_Cell);
     reweight_forward            = CreateGlobalForward("UMC_OnReweightMap", ET_Ignore, Param_Cell, Param_String, Param_String);
     reweight_group_forward      = CreateGlobalForward("UMC_OnReweightGroup", ET_Ignore, Param_Cell, Param_String);
     exclude_forward             = CreateGlobalForward("UMC_OnDetermineMapExclude", ET_Hook, Param_Cell, Param_String, Param_String, Param_Cell, Param_Cell);
@@ -636,7 +637,7 @@ public Native_UMCVoteManagerComplete(Handle:plugin, numParams)
 }
 
 //native Handle:UMC_CreateValidMapArray(Handle:kv, const String:group[], bool:isNom, bool:forMapChange);
-public Native_UMCCreateMapArray(Handle:plugin, numParams)
+public Native_UMCCreateMapArray(Handle plugin, int numParams)
 {
     new Handle:kv = CreateKeyValues("umc_rotation");
     new Handle:arg = Handle:GetNativeCell(1);

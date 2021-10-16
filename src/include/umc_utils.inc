@@ -214,14 +214,15 @@ stock bool:KvJumpToMap(Handle:kv, const String:map[])
 //  map: Map whose group we're looking for.
 //  buffer: Buffer to store the found group name.
 //  maxlen: Maximum length of the buffer.
-stock bool:KvFindGroupOfMap(Handle:kv, const String:map[], String:buffer[], maxlen)
+stock bool KvFindGroupOfMap(Handle kv, char[] map, char[] buffer, int maxlen)
 {
     if (!KvGotoFirstSubKey(kv))
     {
         return false;
     }
 
-    decl String:mapName[MAP_LENGTH], String:groupName[MAP_LENGTH];
+    char mapName[MAP_LENGTH], groupName[MAP_LENGTH];
+
     do
     {
         KvGetSectionName(kv, groupName, sizeof(groupName));
@@ -248,6 +249,7 @@ stock bool:KvFindGroupOfMap(Handle:kv, const String:map[], String:buffer[], maxl
     }
     while (KvGotoNextKey(kv));
     KvGoBack(kv);
+
     return false;
 }
 

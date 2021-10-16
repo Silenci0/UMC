@@ -1,35 +1,18 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *                          Ultimate Mapchooser - Post-Played Exclusion                          *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*************************************************************************
-*************************************************************************
-This plugin is free software: you can redistribute 
-it and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation, either version 3 of the License, or
-later version. 
+// SPDX-License-Identifier: GPL-3.0-only
 
-This plugin is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this plugin.  If not, see <http://www.gnu.org/licenses/>.
-*************************************************************************
-*************************************************************************/
 #pragma semicolon 1
 
 #include <sourcemod>
 #include <umc-core>
 #include <umc_utils>
 
-public Plugin:myinfo =
+public Plugin myinfo =
 {
     name = "[UMC] Post-Played Exclusion",
-    author = "Previous:Steell,Powerlord - Current: Mr.Silence",
+    author = "Steell, Powerlord, Mr.Silence, VIORA",
     description = "Allows users to specify an amount of time after a map is played that it should be excluded.",
     version = PL_VERSION,
-    url = "http://forums.alliedmods.net/showthread.php?t=134190"
+    url = "https://github.com/crescentrose/UMC"
 }
 
 #define POSTEX_KEY_MAP "allow_every"
