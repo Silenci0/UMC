@@ -32,7 +32,6 @@ Handle cvar_vote_tierdisplay    = INVALID_HANDLE;
 Handle cvar_logging             = INVALID_HANDLE;
 Handle cvar_extend_display      = INVALID_HANDLE;
 Handle cvar_dontchange_display  = INVALID_HANDLE;
-Handle cvar_valvemenu           = INVALID_HANDLE;
 Handle cvar_version             = INVALID_HANDLE;
 Handle cvar_count_sound         = INVALID_HANDLE;
 Handle cvar_default_vm          = INVALID_HANDLE;
@@ -89,13 +88,13 @@ Handle maplistdisplay_forward = INVALID_HANDLE;
 /* Template System */
 Handle template_forward = INVALID_HANDLE;
 
-//Flags
-bool change_map_round; //Change map when the round ends?
+// Flags
+bool change_map_round; // Change map when the round ends?
 
 //************************************************************************************************//
 //                                        SOURCEMOD EVENTS                                        //
 //************************************************************************************************//
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, err_max)
 {
     CreateNative("UMC_AddWeightModifier", Native_UMCAddWeightModifier);
     CreateNative("UMC_StartVote", Native_UMCStartVote);
@@ -156,13 +155,6 @@ public OnPluginStart()
         "",
         "Specifies a sound to be played each second during the countdown time between runoff and tiered votes. (Sound will be precached and added to the download table.)"
     ); // TODO: drop sounds feature
-
-    cvar_valvemenu = CreateConVar(
-        "sm_umc_votemanager_core_menu_esc",
-        "0",
-        "If enabled, votes will use Valve-Stlye menus (players will be required to press ESC in order to vote). NOTE: this may not work in TF2!",
-        0, true, 0.0, true, 1.0
-    ); // TODO: drop feature
 
     cvar_extend_display = CreateConVar(
         "sm_umc_extend_display",
@@ -1456,9 +1448,9 @@ public Action:VM_GroupVote(duration, Handle:vote_items, const clients[], numClie
     return Plugin_Stop;
 }
 
-Handle:BuildVoteMenu(Handle:vote_items, const String:title[], VoteHandler:callback)
+Menu BuildVoteMenu(Handle vote_items, const char[] title, VoteHandler callback)
 {
-    new bool:verboseLogs = GetConVarBool(cvar_logging);
+    bool verboseLogs = GetConVarBool(cvar_logging);
 
     if (verboseLogs)
     {
@@ -1466,16 +1458,11 @@ Handle:BuildVoteMenu(Handle:vote_items, const String:title[], VoteHandler:callba
     }
 
     //Begin creating menu
-    new Handle:menu = (GetConVarBool(cvar_valvemenu))
-        ? CreateMenuEx(GetMenuStyleHandle(MenuStyle_Valve), Handle_VoteMenu,
-                       MenuAction_DisplayItem|MenuAction_Display)
-        : CreateMenu(Handle_VoteMenu, MenuAction_DisplayItem|MenuAction_Display);
+    Menu menu = new Menu(Handle_VoteMenu, MenuAction_DisplayItem | MenuAction_Display);
 
-    SetVoteResultCallback(menu, callback); //Set callback
-    SetMenuExitButton(menu, false); //Don't want an exit button.
-
-    //Set the title
-    SetMenuTitle(menu, title);
+    menu.VoteResultCallback = callback;
+    menu.ExitButton = false;
+    menu.SetTitle(title);
 
     //Keep track of slots taken up in the vote.
     new blockSlots = GetConVarInt(cvar_block_slots);
@@ -1483,7 +1470,7 @@ Handle:BuildVoteMenu(Handle:vote_items, const String:title[], VoteHandler:callba
 
     if (GetConVarBool(cvar_novote))
     {
-        SetMenuOptionFlags(menu, MENUFLAG_BUTTON_NOVOTE);
+        menu.OptionFlags = MENUFLAG_BUTTON_NOVOTE;
         voteSlots++;
 
         if (verboseLogs)
@@ -1501,12 +1488,13 @@ Handle:BuildVoteMenu(Handle:vote_items, const String:title[], VoteHandler:callba
     {
         LogError("VOTING: Not enough options to run a vote. %i options available.", size);
         CloseHandle(menu);
-        return INVALID_HANDLE;
+        return Menu:INVALID_HANDLE;
     }
 
-    new Handle:voteItem;
-    decl String:info[MAP_LENGTH], String:display[MAP_LENGTH];
-    for (new i = 0; i < size; i++)
+    Handle voteItem;
+    char info[MAP_LENGTH], display[MAP_LENGTH];
+
+    for (int i = 0; i < size; i++)
     {
         voteSlots++;
         voteItem = GetArrayCell(vote_items, i);
